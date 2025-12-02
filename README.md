@@ -1,3 +1,193 @@
+# Microservices – Minimal Store
+
+Example project to practice **microservices architecture** using Python + Flask + SQLite.
+
+The system simulates an extremely simple store divided into **3 microservices**:
+
+- `products_service`: product management  
+- `orders_service`: order management  
+- `payments_service`: payment registration  
+
+Each service:
+
+- Has its own REST API  
+- Has its own independent database  
+- Communicates with other services only through HTTP  
+- Is protected by its own `Bearer` token  
+
+---
+
+## 1. General Architecture
+
+Components:
+
+- **Client** (`client.py`):  
+  Console script that consumes the APIs of the 3 microservices.
+
+- **Products Service** (`products_service`):  
+  Exposes basic CRUD operations for products.  
+  Database: `products.db`.
+
+- **Orders Service** (`orders_service`):  
+  Creates and retrieves orders.  
+  Validates products and stock by calling `products_service` via HTTP.  
+  Database: `orders.db`.
+
+- **Payments Service** (`payments_service`):  
+  Registers payments associated with orders.  
+  Validates order existence by calling `orders_service` via HTTP.  
+  Database: `payments.db`.
+
+Each service runs as an independent Flask process on a different port.
+
+---
+
+## 2. Technologies
+
+- **Language:** Python 3  
+- **HTTP Framework:** Flask  
+- **HTTP Client:** requests  
+- **Database:** SQLite (one per microservice)  
+- **API Style:** REST (JSON + HTTP status codes)  
+- **Authentication between client/services and between services:**  
+  Static tokens via header:
+
+
+
+---
+
+## 3. Services and APIs
+
+---
+
+### 3.1. Products Service (`products_service`)
+
+- **Port:** `5001`  
+- **Base URL:** `http://localhost:5001`  
+- **Required token:**
+
+
+
+#### Endpoints
+
+1. **GET `/products`**  
+ - Returns all products.  
+ - 200: list of products.
+
+2. **GET `/products/<id>`**  
+ - Returns a product by ID.  
+ - 200: product  
+ - 404: `{"error": "Product not found"}`
+
+3. **POST `/products`**  
+ - Creates a new product.  
+ - Body JSON:
+   ```json
+   {
+     "name": "Computer",
+     "price": 200,
+     "stock": 20
+   }
+   ```
+ - 201: product created
+
+4. **PUT `/products/<id>`**  
+ - Fully updates an existing product.  
+ - 200: updated product  
+ - 404: product not found
+
+---
+
+### 3.2. Orders Service (`orders_service`)
+
+- **Port:** `5002`  
+- **Base URL:** `http://localhost:5002`  
+- **Required token:**
+
+
+
+#### Endpoints
+
+1. **POST `/orders`**  
+ - Creates a new order.  
+ - Body JSON:
+   ```json
+   {
+     "product_id": 1,
+     "quantity": 3
+   }
+   ```
+ - Logic:
+   - Calls `GET /products/<product_id>` from the Products service (internal token).  
+   - If product does not exist or stock is insufficient → 400  
+   - If valid → creates order with status `"PENDING"`  
+ - 201: order created  
+ - Errors:
+   - `"Missing fields"`  
+   - `"Product not found or unavailable"`  
+   - `"Not enough stock"`
+
+2. **GET `/orders/<id>`**  
+ - Retrieves an order by ID.  
+ - 200: order (`id`, `product_id`, `quantity`, `status`)  
+ - 404: `{"error": "Order not found"}`
+
+---
+
+### 3.3. Payments Service (`payments_service`)
+
+- **Port:** `5003`  
+- **Base URL:** `http://localhost:5003`  
+- **Required token:**
+
+
+
+#### Endpoints
+
+1. **POST `/payments`**  
+ - Registers a payment for an order.  
+ - Body JSON:
+   ```json
+   {
+     "order_id": 1,
+     "amount": 200,
+     "method": "fake-card"
+   }
+   ```
+ - Logic:
+   - Calls `GET /orders/<order_id>` from the Orders service (internal token).  
+   - If the order does not exist or Orders is unavailable → 400 `"Order not found or unavailable"`  
+   - If valid → stores payment with status `"SUCCESS"`  
+ - 201: payment created  
+ - Errors:
+   - `"Missing fields"`  
+   - `"Order not found or unavailable"`
+
+---
+
+## 4. Project Structure
+
+```text
+microservices/
+
+common/
+  config.py          # tokens and internal URLs
+
+products_service/
+  app.py             # Products HTTP API (Flask)
+  db.py              # initialization and access to products.db
+
+orders_service/
+  app.py             # Orders HTTP API (Flask)
+  db.py              # initialization and access to orders.db
+
+payments_service/
+  app.py             # Payments HTTP API (Flask)
+  db.py              # initialization and access to payments.db
+
+client.py            # console client to test the 3 services
+```
+
 # microservices# Microservicios – Tienda Minimal
 
 Proyecto de ejemplo para practicar arquitectura de **microservicios** usando Python + Flask + SQLite.
