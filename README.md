@@ -157,24 +157,19 @@ Endpoints:
 
 ```text
 microservices/
-  __init__.py
 
   common/
-    __init__.py
     config.py          # tokens y URLs internas
 
   products_service/
-    __init__.py
     app.py             # API HTTP de productos (Flask)
     db.py              # inicialización y acceso a products.db
 
   orders_service/
-    __init__.py
     app.py             # API HTTP de pedidos (Flask)
     db.py              # inicialización y acceso a orders.db
 
   payments_service/
-    __init__.py
     app.py             # API HTTP de pagos (Flask)
     db.py              # inicialización y acceso a payments.db
 
